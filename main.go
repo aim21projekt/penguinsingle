@@ -63,6 +63,12 @@ func getHostname() string {
 	return hostname
 }
 
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+
 func getVersion() string {
 	ver := os.Getenv("VERSION")
 	if ver == "" {
@@ -96,6 +102,7 @@ func getMetadata() string {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	waitGroup.Add(1)
 	defer waitGroup.Done()
 	remote := r.RemoteAddr
