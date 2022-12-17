@@ -242,6 +242,7 @@ func main() {
 		},
 	}
 	app.Action = func(c *cli.Context) error {
+		mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 		mux.Handle("/demo", counter(http.HandlerFunc(ping)))
 		mux.Handle("/fail", counter(http.HandlerFunc(fail)))
 		mux.Handle("/404", counter(http.HandlerFunc(missing)))
