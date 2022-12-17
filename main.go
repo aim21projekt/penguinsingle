@@ -46,14 +46,9 @@ type (
 		ContColor string `json:"contColor"`
 		Pets      string `json:"pets"`
 	}
-
-	Info struct {
-		Hostname string `json:"hostname"`
-		Uptime   string `json:"uptime"`
-		Requests int    `json:"requests"`
-	}
 )
 
+// Function to get the hostname
 func getHostname() string {
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -63,12 +58,7 @@ func getHostname() string {
 	return hostname
 }
 
-
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
-
+// Function to get the version
 func getVersion() string {
 	ver := os.Getenv("VERSION")
 	if ver == "" {
@@ -78,20 +68,6 @@ func getVersion() string {
 	return ver
 }
 
-func getInfo() (*Info, error) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	uptime := time.Now().Sub(started)
-
-	return &Info{
-		Hostname: hostname,
-		Uptime:   uptime.String(),
-		Requests: requests,
-	}, nil
-}
 
 func loadTemplate(filename string) (*template.Template, error) {
 	return template.ParseFiles(filename)
@@ -101,8 +77,8 @@ func getMetadata() string {
 	return os.Getenv("METADATA")
 }
 
+// Function to start the index page
 func index(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
 	waitGroup.Add(1)
 	defer waitGroup.Done()
 	remote := r.RemoteAddr
@@ -156,48 +132,6 @@ func index(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, cnt)
 }
 
-func info(w http.ResponseWriter, r *http.Request) {
-	waitGroup.Add(1)
-	defer waitGroup.Done()
-
-	w.Header().Set("Connection", "close")
-
-	i, err := getInfo()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(i); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func load(w http.ResponseWriter, r *http.Request) {
-	waitGroup.Add(1)
-	defer waitGroup.Done()
-
-	// add a false delay
-	time.Sleep(2 * time.Second)
-
-	w.Header().Set("Connection", "close")
-
-	i, err := getInfo()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(i); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
 
 func fail(w http.ResponseWriter, r *http.Request) {
 	waitGroup.Add(1)
@@ -222,6 +156,7 @@ func missing(w http.ResponseWriter, r *http.Request) {
 }
 
 func ping(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	waitGroup.Add(1)
 	defer waitGroup.Done()
 
@@ -262,7 +197,6 @@ func ping(w http.ResponseWriter, r *http.Request) {
 			MaxAge:  86400,
 		}
 	}
-	fmt.Printf("cookie: %s\n", current.Value)
 
 	http.SetCookie(w, current)
 
@@ -285,8 +219,8 @@ func counter(h http.Handler) http.Handler {
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "rancher-demo"
-	app.Usage = "rancher demo application"
+	app.Name = "single-penguin"
+	app.Usage = "single-penguin application"
 	app.Version = "1.4.1"
 	app.Author = "@oskapt"
 	app.Email = ""
@@ -308,10 +242,7 @@ func main() {
 		},
 	}
 	app.Action = func(c *cli.Context) error {
-		mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 		mux.Handle("/demo", counter(http.HandlerFunc(ping)))
-		mux.Handle("/info", counter(http.HandlerFunc(info)))
-		mux.Handle("/load", counter(http.HandlerFunc(load)))
 		mux.Handle("/fail", counter(http.HandlerFunc(fail)))
 		mux.Handle("/404", counter(http.HandlerFunc(missing)))
 		mux.Handle("/", counter(http.HandlerFunc(index)))
@@ -328,8 +259,8 @@ func main() {
 			ReadTimeout:  time.Second * 10,
 		}
 
-		log.Printf("instance: %s\n", hostname)
-		log.Printf("listening on %s\n", listenAddr)
+		fmt.Printf("instance: %s\n", hostname)
+		fmt.Printf("listening on %s\n", listenAddr)
 
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Interrupt)
