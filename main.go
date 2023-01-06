@@ -172,10 +172,9 @@ func ping(w http.ResponseWriter, r *http.Request) {
 
 	hostname := getHostname()
 
-	contColor := os.Getenv("CONTAINER_COLOR")
-	if contColor == "" {
-		contColor = "black"
-	}
+	colors := [10]string{"red","orange","yellow","olive","green","teal","blue","violet","purple","pink"}
+
+	var contColor string = colors[globalrandom-1]
 
 	pets := os.Getenv("PETS")
 	if pets == "" {
@@ -190,7 +189,7 @@ func ping(w http.ResponseWriter, r *http.Request) {
 		Metadata:  getMetadata(),
 		ContColor: contColor,
 		Pets:      pets,
-		RandomNumber:	globalrandom,
+		RandomNumber:	strconv.Itoa(globalrandom),
 	}
 
 	requestID := r.Header.Get("X-Request-Id")
@@ -228,7 +227,9 @@ func counter(h http.Handler) http.Handler {
 	})
 }
 
-var globalrandom string = strconv.Itoa(randomNumber())
+// Global Variable for the random number
+var globalrandom int = randomNumber()
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "single-penguin"
@@ -260,9 +261,6 @@ func main() {
 		mux.Handle("/404", counter(http.HandlerFunc(missing)))
 		mux.Handle("/", counter(http.HandlerFunc(index)))
 
-		//myRandomNum = globalrandom
-		//os.Setenv("RANDOMPENGNUMBER", myRandomNum)
-
 		hostname := getHostname()
 		listenAddr := c.String("listen-addr")
 		tlsCert := c.String("tls-cert")
@@ -277,7 +275,7 @@ func main() {
 
 		fmt.Printf("instance: %s\n", hostname)
 		fmt.Printf("listening on %s\n", listenAddr)
-		fmt.Printf("Our Random Penguin Number:  %s\n", globalrandom)
+		fmt.Printf("Our Random Penguin Number:  %s\n", strconv.Itoa(globalrandom))
 
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Interrupt)
