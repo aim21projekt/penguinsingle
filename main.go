@@ -72,6 +72,7 @@ func getVersion() string {
 }
 
 func randomNumber() int {
+	rand.Seed(time.Now().UnixNano())
     return rand.Intn(10) + 1
 }
 
@@ -178,10 +179,10 @@ func ping(w http.ResponseWriter, r *http.Request) {
 
 	pets := os.Getenv("PETS")
 	if pets == "" {
-		pets = "cows"
+		pets = "penguin"
 	}
 
-	myRandomNum := os.Getenv("RANDOMPENGNUMBER")
+	//myRandomNum := os.Getenv("RANDOMPENGNUMBER")
 
 	p := Ping{
 		Instance:  hostname,
@@ -189,7 +190,7 @@ func ping(w http.ResponseWriter, r *http.Request) {
 		Metadata:  getMetadata(),
 		ContColor: contColor,
 		Pets:      pets,
-		RandomNumber:	myRandomNum,
+		RandomNumber:	globalrandom,
 	}
 
 	requestID := r.Header.Get("X-Request-Id")
@@ -227,6 +228,7 @@ func counter(h http.Handler) http.Handler {
 	})
 }
 
+var globalrandom string = strconv.Itoa(randomNumber())
 func main() {
 	app := cli.NewApp()
 	app.Name = "single-penguin"
@@ -258,8 +260,8 @@ func main() {
 		mux.Handle("/404", counter(http.HandlerFunc(missing)))
 		mux.Handle("/", counter(http.HandlerFunc(index)))
 
-		myRandomNum := strconv.Itoa(randomNumber())
-		os.Setenv("RANDOMPENGNUMBER", myRandomNum)
+		//myRandomNum = globalrandom
+		//os.Setenv("RANDOMPENGNUMBER", myRandomNum)
 
 		hostname := getHostname()
 		listenAddr := c.String("listen-addr")
@@ -275,7 +277,7 @@ func main() {
 
 		fmt.Printf("instance: %s\n", hostname)
 		fmt.Printf("listening on %s\n", listenAddr)
-		fmt.Printf("Our Random Penguin Number:  %s\n", myRandomNum)
+		fmt.Printf("Our Random Penguin Number:  %s\n", globalrandom)
 
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Interrupt)
