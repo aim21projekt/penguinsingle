@@ -16,7 +16,8 @@
             var containers = [];
             var lastSeen = {};
             var colors = new Object;
-            var refreshInterval = Number({{ .RefreshInterval }});
+            //var refreshInterval = Number({{ .RefreshInterval }});
+            var refreshInterval = 300000;
 
             function getPetsAsset(pets) {
                 var asset;
@@ -79,6 +80,27 @@
                              containers.push(data.instance);
                          }
 
+                         var myColors = [
+                                "red",
+                                "orange",
+                                "yellow",
+                                "olive",
+                                "green",
+                                "teal",
+                                "blue",
+                                "violet",
+                                "purple",
+                                "pink"
+                            ]
+
+                         // Get the image element
+                         var image = document.querySelector('img');
+                         // Set the src attribute of the image to include the random number
+                         image.src = "https://penguinpics.s3.eu-west-2.amazonaws.com/penguin" + data.randomNumber + ".png";
+
+                         document.getElementById("randomRace").innerHTML = data.randomNumber;
+                         document.getElementById("randomRace").style.color = myColors[data.randomNumber-1];
+
                          var contColor = data.contColor;
 						 var petsAsset = getPetsAsset(data.pets);
 
@@ -91,6 +113,7 @@
                             if (el.length == 0) {
                                 console.log("creating instance " + instanceName);
 
+
                                 // create a shorter display name for the tile
                                 var displayName = instanceName.match(/.+-(\w+)$/);
                                 if (!displayName) {
@@ -98,9 +121,7 @@
                                 } else {
                                   displayName = displayName[1];
                                 }
-                                var elData = '<div id="instance-' + instanceName + '" class="card container-instance"><div class="image" id="replica" style="background-color: ' + contColor + ';"><img width="25%" height="25%" src="' + petsAsset + '"></div><div class="content centered view-computer"><div> {{ if .ShowVersion }}<div class="ui top left attached ' + color + ' label">' + data.version +'</div>{{ end }} <div id="instance-label-' + instanceName + '"class="ui top right attached green serving label">serving</div>' + displayName + '</div></div></div>';
-
-                                $("div.container-group").append(elData);
+                                
                                 el = $("#instance-" + instanceName);
                             }
 
@@ -141,26 +162,32 @@
                 });
             }
 
-            setInterval(reload, refreshInterval);
+            window.onload = reload;
         </script>
     </head>
+
     <body>
-        <div class="ui two column relaxed doubling padded grid">
-            <div class="six wide column meta">
+        <div class="ui single column relaxed doubling padded grid">
+            <div class="ten wide column meta">
                 <div class="ui container">
-                    A single Penguin 
-
-
+                    
                     <div class="row centered">
-                        <div class="ui huge statistic">
-                            <div id="container-count" class="value"></div>
-                            <div id="container-count-label" class="label"></div>
-                        </div>
+                        <!-- The <img> element -->
+                        <img src="" alt="Penguin Image" style="width: 50%; border-radius: 5%;">
                     </div>
+
                     <div class="row centered container-backend hide">
                         <div class="ui statistic">
+                            <div class="label">Penguin Name: </div>
                             <div id="current-container" class="value"></div>
-                            <div class="label">current backend</div>
+                        </div>
+                    </div>
+
+                    <div class="row centered container-backend hide">
+                        <div class="ui statistic">
+                            <div class="label">Penguin Race: </div>
+                            <div id="randomRace"></div>
+                            
                         </div>
                     </div>
 
@@ -180,12 +207,7 @@
                     {{ end }}
                 </div>
             </div>
-            <div class="ten wide column">
-                <div class="ui padded raised segment containers">
-                    <div class="ui six cards doubling container-group">
-                    </div>
-                </div>
-            </div>
+
         </div>
     </body>
 </html>

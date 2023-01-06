@@ -11,6 +11,8 @@ import (
 	"os/signal"
 	"sync"
 	"time"
+	"math/rand"
+	"strconv"
 
 	"github.com/urfave/cli"
 )
@@ -45,6 +47,7 @@ type (
 		RequestID string `json:"request_id,omitempty"`
 		ContColor string `json:"contColor"`
 		Pets      string `json:"pets"`
+		RandomNumber string `json:"randomNumber"`
 	}
 )
 
@@ -66,6 +69,10 @@ func getVersion() string {
 	}
 
 	return ver
+}
+
+func randomNumber() int {
+    return rand.Intn(10) + 1
 }
 
 
@@ -98,7 +105,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 	title := os.Getenv("TITLE")
 	if title == "" {
-		title = "Rancher Demo"
+		title = "Single Penguin"
 	}
 
 	hostname := getHostname()
@@ -174,12 +181,15 @@ func ping(w http.ResponseWriter, r *http.Request) {
 		pets = "cows"
 	}
 
+	myRandomNum := os.Getenv("RANDOMPENGNUMBER")
+
 	p := Ping{
 		Instance:  hostname,
 		Version:   getVersion(),
 		Metadata:  getMetadata(),
 		ContColor: contColor,
 		Pets:      pets,
+		RandomNumber:	myRandomNum,
 	}
 
 	requestID := r.Header.Get("X-Request-Id")
@@ -248,6 +258,9 @@ func main() {
 		mux.Handle("/404", counter(http.HandlerFunc(missing)))
 		mux.Handle("/", counter(http.HandlerFunc(index)))
 
+		myRandomNum := strconv.Itoa(randomNumber())
+		os.Setenv("RANDOMPENGNUMBER", myRandomNum)
+
 		hostname := getHostname()
 		listenAddr := c.String("listen-addr")
 		tlsCert := c.String("tls-cert")
@@ -262,6 +275,7 @@ func main() {
 
 		fmt.Printf("instance: %s\n", hostname)
 		fmt.Printf("listening on %s\n", listenAddr)
+		fmt.Printf("Our Random Penguin Number:  %s\n", myRandomNum)
 
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Interrupt)
