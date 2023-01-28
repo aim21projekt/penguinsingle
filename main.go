@@ -13,9 +13,20 @@ import (
 	"time"
 	"math/rand"
 	"strconv"
-
+	"bytes"
 	"github.com/urfave/cli"
+    "net/http/httputil"
 )
+
+// Define the single penguin Entry for the azure table
+type PenguinEntity struct {
+	PartitionKey  string `json:"PartitionKey"`
+	RowKey   string `json:"RowKey"`
+	ContColor string `json:"contColor"`
+	ImageUrl string `json:"imageUrl"`
+}
+
+
 
 var (
 	mux           = http.NewServeMux()
@@ -50,6 +61,52 @@ type (
 		RandomNumber string `json:"randomNumber"`
 	}
 )
+
+// Function to insert PenguinEntity into Azure Table
+func insertPenguinEntity(url string, penguinEntity PenguinEntity) (*http.Response, error) {
+	// Convert the request data to JSON
+	jsonData, err := json.Marshal(penguinEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new request
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the content type to JSON
+	req.Header.Set("Accept", "application/json;odata=nometadata")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-ms-version", "2015-12-11")
+
+	reqDump, err := httputil.DumpRequestOut(req, true)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+	fmt.Printf("REQUEST:\n%s", string(reqDump))
+
+	// Send the request
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	respDump, err := httputil.DumpResponse(resp, true)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("RESPONSE:\n%s", string(respDump))
+
+
+	return resp, nil
+}
+
+
 
 // Function to get the hostname
 func getHostname() string {
@@ -276,6 +333,21 @@ func main() {
 		fmt.Printf("instance: %s\n", hostname)
 		fmt.Printf("listening on %s\n", listenAddr)
 		fmt.Printf("Our Random Penguin Number:  %s\n", strconv.Itoa(globalrandom))
+
+		fmt.Println("Adding an Penguinentity to the table")
+		colorsPe := [10]string{"red","orange","yellow","olive","green","teal","blue","violet","purple","pink"}
+		var contColorPe string = colorsPe[globalrandom-1]
+		imageUrl := fmt.Sprintf("%s%s%s", "https://penguinpics.s3.eu-west-2.amazonaws.com/penguin", strconv.Itoa(globalrandom), ".png")
+		pe := PenguinEntity{
+			PartitionKey:  strconv.Itoa(globalrandom),
+			RowKey: hostname,
+			ContColor: contColorPe,
+			ImageUrl: imageUrl,
+		}
+		tableUrl := fmt.Sprintf("%s%s%s", "https://aim21rancherstorage.table.core.windows.net/singlePenguin?","sv=2021-06-08&ss=t&srt=o&sp=rwlacu&se=2023-09-28T21:08:16Z&st=2023-01-28T14:08:16Z&spr=https,",
+		"http&sig=4OuBvaF3dtwJqzLuJmw6O5XNEHzIE%2BQgOpXEA56Yifo%3D")
+		insertPenguinEntity(tableUrl,pe)
+
 
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Interrupt)
