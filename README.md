@@ -1,4 +1,4 @@
-# Single Penguin Applicaton
+# Single Penguin Application
 
 This Repositoriy works analog to the frontend one. 
 It can be access via penguin.pengamous.org or via clicking on a penguin in the frontend.
